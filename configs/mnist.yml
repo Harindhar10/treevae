@@ -5,10 +5,10 @@ data:
   num_clusters_data: 10 # number of true clusters in the data (if known), this is used only for evaluation purposes
 
 training:
-  num_epochs: 150 # number of epochs to train the initial tree
-  num_epochs_smalltree: 150 # number of epochs to train the sub-tree during growing
-  num_epochs_intermediate_fulltrain: 80 # number of epochs to train the full tree during growing
-  num_epochs_finetuning: 200 # number of epochs to train the final tree
+  num_epochs: 20 # number of epochs to train the initial tree
+  num_epochs_smalltree: 20 # number of epochs to train the sub-tree during growing
+  num_epochs_intermediate_fulltrain: 20 # number of epochs to train the full tree during growing
+  num_epochs_finetuning: 50 # number of epochs to train the final tree
   batch_size: 256 # batch size
   lr: 0.001 # learning rate
   weight_decay: 0.00001 # optimizer weight decay
