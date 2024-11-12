@@ -48,7 +48,7 @@ def run_experiment(configs):
 	# Wandb
 	os.environ['WANDB_CACHE_DIR'] = os.path.join(project_dir, '../wandb', '.cache', 'wandb')
 	os.environ["WANDB_SILENT"] = "true"
-
+	wandb.login(key="de9e32a1ae60427480eadc83e16a822269132cb7")
 	# ADD YOUR WANDB ENTITY
 	wandb.init(
 		project="treevae",
