@@ -12,6 +12,35 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from utils.utils import reset_random_seeds
+from my_library import Database,gzip_tensor
+import torch
+from torch.utils.data import Dataset
+
+
+class CustomDataset(Dataset):
+    def __init__(self, data, num_classes):
+        """
+        Args:
+            data (torch.Tensor): A 3D tensor of shape (N, H, W), where
+                                 N is the number of samples, H and W are the dimensions of each 2D tensor.
+            num_classes (int): Number of classes for generating random labels.
+        """
+        self.data = data
+        self.num_classes = num_classes
+        self.targets = np.random.randint(0, num_classes, size=(data.size(0),))  # Random labels for each sample
+
+    def __len__(self):
+        return self.data.size(0)  # Number of samples
+
+    def __getitem__(self, idx):
+        # Extract 2D tensor and reshape to triple square brackets format
+        tensor_2d = self.data[idx]   #.unsqueeze(0)  Add extra brackets: [[[tensor]]]
+        tensor_2d_reshaped = torch.reshape(tensor_2d,(1,788480)).squeeze
+        # Fetch the corresponding random label
+        label = self.targets[idx]
+        
+        return tensor_2d_reshaped, label
+
 
 def get_data(configs):
 	"""Compute and process the data specified in the configs file.
@@ -31,20 +60,55 @@ def get_data(configs):
 	augment = configs['training']['augment']
 	augmentation_method = configs['training']['augmentation_method']
 	n_classes = configs['data']['num_clusters_data']
+	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
 
-	data_path = './data/'
+	# if data_name == 'mnist':
+	# 	reset_random_seeds(configs['globals']['seed'])
+	# 	full_trainset = torchvision.datasets.MNIST(root=data_path, train=True, download=True, transform=T.ToTensor())
+	# 	full_testset = torchvision.datasets.MNIST(root=data_path, train=False, download=True, transform=T.ToTensor())
+	
 
+	# 	indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
+
+	# 	trainset = Subset(full_trainset, indx_train)
+	# 	trainset_eval = Subset(full_trainset, indx_train)
+	# 	testset = Subset(full_testset, indx_test)
+	# 	print(f"Subset size: {len(trainset)}")
+ 
 	if data_name == 'mnist':
 		reset_random_seeds(configs['globals']['seed'])
-		full_trainset = torchvision.datasets.MNIST(root=data_path, train=True, download=True, transform=T.ToTensor())
-		full_testset = torchvision.datasets.MNIST(root=data_path, train=False, download=True, transform=T.ToTensor())
+		db = Database(DB_FILE)
 
-		# get only num_clusters digits
-		indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
-		trainset = Subset(full_trainset, indx_train)
-		trainset_eval = Subset(full_trainset, indx_train)
-		testset = Subset(full_testset, indx_test)
+		# load columns from the database as numpy arrays
+		_format = lambda x: (x['header'], x['sequence'], gzip_tensor(x['embedding']).numpy())
+		headers, sequences, embeddings = zip(*(_format(i) for i in db.retrieve()))
 
+		headers    = np.array(headers   , dtype=object)
+		accessions = np.array([i.split()[0] for i in headers], dtype=object)
+		sequences  = np.array(sequences , dtype=object)
+		embeddings = np.array(embeddings, dtype=object)
+
+		max_length = max(embed.shape[0] for embed in embeddings)
+
+		padded_arrays = [np.pad(arr, ((0, max_length - arr.shape[0]), (0, 0)), mode='constant', constant_values=0)for arr in embeddings]
+
+		# Convert to a single 3D array (num_samples x max_length x num_features)
+		padded_arrays = np.stack(padded_arrays)
+		embeddings = torch.from_numpy(padded_arrays).float()
+		train_size = int(0.8*len(embeddings))
+		full_trainset = embeddings[0:train_size]
+		full_testset = embeddings[train_size:]
+		trainset = CustomDataset(full_trainset,10)
+		testset = CustomDataset(full_testset,10)
+		trainset_eval = trainset
+		n_classes = 10
+		indx_train, indx_test = select_subset(trainset.targets, testset.targets, n_classes)
+		print('indx train', indx_train)
+		trainset = Subset(trainset, indx_train)
+		trainset_eval = Subset(trainset, indx_train)
+		testset = Subset(testset, indx_test)
+		print(f"Subset size: {len(trainset)}")
+		print(f"trainset[0]: {trainset[0]}")
 
 	elif data_name == 'fmnist':
 		reset_random_seeds(configs['globals']['seed'])
@@ -178,7 +242,6 @@ def get_data(configs):
 		trainset = Subset(fullset, indx_train)
 		trainset_eval = Subset(fullset_eval, indx_train)
 		testset = Subset(fullset_eval, indx_test)
-
 
 
 	elif data_name in ['cifar10', 'cifar100', 'cifar10_vehicles', 'cifar10_animals']:

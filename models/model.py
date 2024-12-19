@@ -120,7 +120,7 @@ class TreeVAE(nn.Module):
         self.return_bottomup = torch.tensor([False])
         self.return_elbo = torch.tensor([False])
 
-        # bottom up: the inference chain that from input computes the d units till the root
+        #bottom up: the inference chain that from input computes the d units till the root
         if self.activation == "mse":
             size = int((self.inp_shape / 3)**0.5)
             encoder = get_encoder(architecture=self.kwargs['encoder'], encoded_size=self.hidden_layers[0],
@@ -129,7 +129,8 @@ class TreeVAE(nn.Module):
             encoder = get_encoder(architecture=self.kwargs['encoder'], encoded_size=self.hidden_layers[0],
                                 x_shape=self.inp_shape)   
 
-        self.bottom_up = nn.ModuleList([encoder])
+        #self.bottom_up = nn.ModuleList([encoder])
+        self.bottom_up = nn.ModuleList([])
         for i in range(1, len(self.hidden_layers)):
             self.bottom_up.append(MLP(self.hidden_layers[i-1], self.encoded_sizes[i], self.hidden_layers[i]))
 
@@ -218,7 +219,7 @@ class TreeVAE(nn.Module):
         encoders = []
         emb_contr = []
 
-        for i in range(0, len(self.hidden_layers)):
+        for i in range(0, len(self.hidden_layers)-1):   # cnn is removed. for i in range(0, len(self.hidden_layers)):
             d, _, _ = self.bottom_up[i](d)
             # store bottom-up embeddings for top-down
             encoders.append(d)
@@ -302,6 +303,7 @@ class TreeVAE(nn.Module):
                     else:
                         # compute the contrastive loss for the decisions
                         aug_decisions_loss += calc_aug_loss(prob_parent=prob, prob_router=prob_child_left_q, augmentation_methods=self.augmentation_method, emb_contr=[])
+
 
                 # we are not in a leaf, so we have to add the left and right child to the list
                 prob_node_left, prob_node_right = prob * prob_child_left_q, prob * (1 - prob_child_left_q)

@@ -69,7 +69,8 @@ def run_experiment(configs):
 
 	# Generate a new dataset each run
 	trainset, trainset_eval, testset = get_data(configs)
-
+	print("Data loaded",testset,testset[0])
+    
 	# Run the full training of treeVAE model, including the growing of the tree
 	model = run_tree(trainset, trainset_eval, testset, device, configs)
 
