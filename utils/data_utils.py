@@ -60,8 +60,9 @@ def get_data(configs):
 	augment = configs['training']['augment']
 	augmentation_method = configs['training']['augmentation_method']
 	n_classes = configs['data']['num_clusters_data']
-	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
-
+	data_path = './data/'
+	#DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
+	DB_FILE    = "/kaggle/input/phosphatase/phosphatase.db"
 	# if data_name == 'mnist':
 	# 	reset_random_seeds(configs['globals']['seed'])
 	# 	full_trainset = torchvision.datasets.MNIST(root=data_path, train=True, download=True, transform=T.ToTensor())
