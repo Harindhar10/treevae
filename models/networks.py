@@ -82,6 +82,7 @@ class EncoderSmallCnn(nn.Module):
         self.bn2 = nn.BatchNorm2d(n_maps_output)
 
     def forward(self, x):
+        #print('input size before 1st cnn layer',x.size())
         x = self.cnn0(x)
         x = self.bn0(x)
         x = actvn(x)
@@ -92,7 +93,44 @@ class EncoderSmallCnn(nn.Module):
         x = self.bn2(x)
         x = actvn(x)
         x = x.view(x.size(0), -1)
+        #Sprint('input size after first cnn layer',x.size())
         return x, None, None
+
+# class DecoderSmallCnn(nn.Module):
+#     def __init__(self, input_shape, activation):
+#         super(DecoderSmallCnn, self).__init__()
+#         self.activation = activation
+#         self.dense = nn.Linear(in_features=input_shape, out_features=3 * 3 * 32, bias=False)
+#         self.bn = nn.BatchNorm1d(3 * 3 * 32)
+#         self.bn1 = nn.BatchNorm2d(16)
+#         self.bn2 = nn.BatchNorm2d(8)
+#         self.cnn1 = nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2, bias=False)
+#         self.cnn2 = nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)        
+#         self.cnn3 = nn.ConvTranspose2d(in_channels=8, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True)
+       
+#     def forward(self, inputs):
+#         #print('size of inputs given to DecoderSmallCnn', inputs.size())
+#         x = self.dense(inputs)
+#         x = self.bn(x)
+#         #print('size of inputs after dense', x.size())
+#         x = actvn(x)
+#         x = x.view(-1, 32, 3, 3)
+#         #print('size of inputs after x.view(-1, 32, 3, 3)', x.size())
+#         x = self.cnn1(x)
+#         x = self.bn1(x)
+#         #print('size of inputs after cnn1 and bn1', x.size())
+#         x = actvn(x)
+#         x = self.cnn2(x)
+#         x = self.bn2(x)
+#         #print('size of inputs after cnn2 and bn2', x.size())
+#         x = actvn(x)
+#         x = self.cnn3(x)
+#         #print('size of inputs after cnn3', x.size())
+#         if self.activation == 'sigmoid':
+#             x = torch.sigmoid(x)
+#         #print('size of output from DecoderSmallCnn',x.size())
+#         return x
+
 
 class DecoderSmallCnn(nn.Module):
     def __init__(self, input_shape, activation):
@@ -100,29 +138,23 @@ class DecoderSmallCnn(nn.Module):
         self.activation = activation
         self.dense = nn.Linear(in_features=input_shape, out_features=3 * 3 * 32, bias=False)
         self.bn = nn.BatchNorm1d(3 * 3 * 32)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.bn2 = nn.BatchNorm2d(8)
-        self.cnn1 = nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2, bias=False)
-        self.cnn2 = nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)        
-        self.cnn3 = nn.ConvTranspose2d(in_channels=8, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True)
-
+        self.dense2 = nn.Linear(in_features = 3 * 3 * 32, out_features = 1848)
+        self.bn2 = nn.BatchNorm1d(1848)
     def forward(self, inputs):
+        #print('size of inputs given to DecoderSmallCnn', inputs.size())
         x = self.dense(inputs)
         x = self.bn(x)
+        #print('size of inputs after dense', x.size())
         x = actvn(x)
-        x = x.view(-1, 32, 3, 3)
-        x = self.cnn1(x)
-        x = self.bn1(x)
-        x = actvn(x)
-        x = self.cnn2(x)
+        x = self.dense2(x)
         x = self.bn2(x)
-        x = actvn(x)
-        x = self.cnn3(x)
+        #print('size of inputs after dense2 and bn2', x.size())
         if self.activation == 'sigmoid':
             x = torch.sigmoid(x)
+        #print('size of output from DecoderSmallCnn',x.size())
         return x
-
-
+     
+    
 class EncoderOmniglot(nn.Module):
     def __init__(self, encoded_size):
         super(EncoderOmniglot, self).__init__()
@@ -313,7 +345,9 @@ class MLP(nn.Module):
         self.sigma = nn.Linear(hidden_unit, encoded_size)
 
     def forward(self, inputs):
+        #print('input size before MlP',inputs.size())
         x = self.dense1(inputs)
+        #print('input size after dense1',x.size())
         x = self.bn1(x)
         x = actvn(x)
         mu = self.mu(x)
