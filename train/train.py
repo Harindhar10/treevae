@@ -52,7 +52,7 @@ def run_experiment(configs):
 	# ADD YOUR WANDB ENTITY
 	wandb.init(
 		project="treevae",
-		entity="be20b012-iit-madras-foundation",
+		entity="iit-madras-foundation",
 		config=configs, 
 		mode=configs['globals']['wandb_logging']
 	)
