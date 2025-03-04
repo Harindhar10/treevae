@@ -82,7 +82,6 @@ class EncoderSmallCnn(nn.Module):
         self.bn2 = nn.BatchNorm2d(n_maps_output)
 
     def forward(self, x):
-
         x = self.cnn0(x)
         x = self.bn0(x)
         x = actvn(x)
@@ -93,7 +92,6 @@ class EncoderSmallCnn(nn.Module):
         x = self.bn2(x)
         x = actvn(x)
         x = x.view(x.size(0), -1)
-
         return x, None, None
 
 class DecoderSmallCnn(nn.Module):
@@ -123,18 +121,8 @@ class DecoderSmallCnn(nn.Module):
         if self.activation == 'sigmoid':
             x = torch.sigmoid(x)
         return x
+ 
 
-#       modified:   train/train.py
-#       modified:   utils/data_utils.py
-#
-# Untracked files:
-#       .DS_Store
-#       .gitattributes
-#       models/.DS_Store
-#       protein_dataset/.DS_Store
-#       protein_dataset/phosphatase/.DS_Store
-#       protein_dataset/phosphatase/phosphatase.db
-#
 class EncoderOmniglot(nn.Module):
     def __init__(self, encoded_size):
         super(EncoderOmniglot, self).__init__()
