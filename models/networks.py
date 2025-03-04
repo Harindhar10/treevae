@@ -121,7 +121,7 @@ class DecoderSmallCnn(nn.Module):
         if self.activation == 'sigmoid':
             x = torch.sigmoid(x)
         return x
- 
+
 
 class EncoderOmniglot(nn.Module):
     def __init__(self, encoded_size):
