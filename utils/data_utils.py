@@ -61,6 +61,7 @@ def get_data(configs):
 	augment = configs['training']['augment']
 	augmentation_method = configs['training']['augmentation_method']
 	n_classes = configs['data']['num_clusters_data']
+
 	data_path = './data/'
 	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
 
@@ -70,9 +71,9 @@ def get_data(configs):
 		full_trainset = torchvision.datasets.MNIST(root=data_path, train=True, download=True, transform=T.ToTensor())
 		full_testset = torchvision.datasets.MNIST(root=data_path, train=False, download=True, transform=T.ToTensor())
 
+		# get only num_clusters digits
 
 		indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
-		print('indx train', indx_train)
 	
 		trainset = Subset(full_trainset, indx_train)
 		trainset_eval = Subset(full_trainset, indx_train)

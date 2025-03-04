@@ -107,9 +107,8 @@ class DecoderSmallCnn(nn.Module):
         self.cnn1 = nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=3, stride=2, bias=False)
         self.cnn2 = nn.ConvTranspose2d(in_channels=16, out_channels=8, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False)        
         self.cnn3 = nn.ConvTranspose2d(in_channels=8, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1, bias=True)
-       
-    def forward(self, inputs):
 
+    def forward(self, inputs):
         x = self.dense(inputs)
         x = self.bn(x)
         x = actvn(x)
@@ -121,11 +120,21 @@ class DecoderSmallCnn(nn.Module):
         x = self.bn2(x)
         x = actvn(x)
         x = self.cnn3(x)
-
         if self.activation == 'sigmoid':
             x = torch.sigmoid(x)
         return x
 
+#       modified:   train/train.py
+#       modified:   utils/data_utils.py
+#
+# Untracked files:
+#       .DS_Store
+#       .gitattributes
+#       models/.DS_Store
+#       protein_dataset/.DS_Store
+#       protein_dataset/phosphatase/.DS_Store
+#       protein_dataset/phosphatase/phosphatase.db
+#
 class EncoderOmniglot(nn.Module):
     def __init__(self, encoded_size):
         super(EncoderOmniglot, self).__init__()
@@ -302,8 +311,9 @@ class Resnet_Decoder(nn.Module):
         out = self.resnet(out)
         out = self.conv_img(actvn(self.bn0(out)))
         if self.activation == 'sigmoid':
-            out = torch.sigmoid(out) 
+            out = torch.sigmoid(out)
         return out
+
 
 # Small branch transformation
 class MLP(nn.Module):
@@ -315,9 +325,7 @@ class MLP(nn.Module):
         self.sigma = nn.Linear(hidden_unit, encoded_size)
 
     def forward(self, inputs):
-        #print('input size before MlP',inputs.size())
         x = self.dense1(inputs)
-        #print('input size after dense1',x.size())
         x = self.bn1(x)
         x = actvn(x)
         mu = self.mu(x)
