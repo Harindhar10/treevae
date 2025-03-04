@@ -6,11 +6,6 @@ import torch.nn.functional as F
 
 
 def loss_reconstruction_binary(x, x_decoded_mean, weights):
-    print('size of x',x.size())
-    print('x decoded mean[0] ',x_decoded_mean[0].size())
-    print('x decoded mean[1] ',x_decoded_mean[1].size())
-    print('size of x[0]',x[0].size(),'target = x. x[0]',x[0])
-
     x = torch.flatten(x, start_dim=1)
     x_decoded_mean = [torch.flatten(decoded_leaf, start_dim=1) for decoded_leaf in x_decoded_mean]
     loss = torch.sum(

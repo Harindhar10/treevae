@@ -130,7 +130,6 @@ class TreeVAE(nn.Module):
                                 x_shape=self.inp_shape)   
 
         self.bottom_up = nn.ModuleList([encoder])
-        #self.bottom_up = nn.ModuleList([])
         for i in range(1, len(self.hidden_layers)):
             self.bottom_up.append(MLP(self.hidden_layers[i-1], self.encoded_sizes[i], self.hidden_layers[i]))
 
