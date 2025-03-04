@@ -10,6 +10,11 @@ training:
   num_epochs_intermediate_fulltrain: 1 # number of epochs to train the full tree during growing
   num_epochs_finetuning: 1 # number of epochs to train the final tree
   batch_size: 5 # batch size
+  num_epochs: 1 # number of epochs to train the initial tree
+  num_epochs_smalltree: 1 # number of epochs to train the sub-tree during growing
+  num_epochs_intermediate_fulltrain: 1 # number of epochs to train the full tree during growing
+  num_epochs_finetuning: 1 # number of epochs to train the final tree
+  batch_size: 5 # batch size
   lr: 0.001 # learning rate
   weight_decay: 0.00001 # optimizer weight decay
   decay_lr: 0.1 # learning rate decay

@@ -147,12 +147,15 @@ class DecoderSmallCnn(nn.Module):
         #print('size of inputs after dense', x.size())
         x = actvn(x)
         x = self.dense2(x)
+        x = self.dense2(x)
         x = self.bn2(x)
         #print('size of inputs after dense2 and bn2', x.size())
         if self.activation == 'sigmoid':
             x = torch.sigmoid(x)
         #print('size of output from DecoderSmallCnn',x.size())
         return x
+     
+    
      
     
 class EncoderOmniglot(nn.Module):
@@ -331,9 +334,8 @@ class Resnet_Decoder(nn.Module):
         out = self.resnet(out)
         out = self.conv_img(actvn(self.bn0(out)))
         if self.activation == 'sigmoid':
-            out = torch.sigmoid(out)
+            out = torch.sigmoid(out) 
         return out
-
 
 # Small branch transformation
 class MLP(nn.Module):
