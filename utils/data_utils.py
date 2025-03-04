@@ -274,6 +274,7 @@ def get_data(configs):
 		testset = Subset(fullset_eval, indx_test)
 
 
+
 	elif data_name in ['cifar10', 'cifar100', 'cifar10_vehicles', 'cifar10_animals']:
 		reset_random_seeds(configs['globals']['seed'])
 		aug_strength = 0.5
