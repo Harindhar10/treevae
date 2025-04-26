@@ -16,9 +16,11 @@ from my_library import Database,gzip_tensor
 import torch
 from torch.utils.data import Dataset
 from sklearn.decomposition import PCA
+import pandas as pd
+
 
 class CustomDataset(Dataset):
-    def __init__(self, data, num_classes):
+    def __init__(self, data, targets):
         """
         Args:
             data (torch.Tensor): A 3D tensor of shape (N, H, W), where
@@ -26,9 +28,9 @@ class CustomDataset(Dataset):
             num_classes (int): Number of classes for generating random labels.
         """
         self.data = data
-        self.num_classes = num_classes
+        #self.num_classes = num_classes
         #self.targets = np.random.randint(0, num_classes, size=(data.size(0),))  # Random labels for each sample
-        self.targets = torch.randint(0,num_classes, size=(data.size(0),))
+        self.targets = targets
 
     def __len__(self):
         return self.data.size(0)  # Number of samples
@@ -41,6 +43,49 @@ class CustomDataset(Dataset):
         label = self.targets[idx]
         
         return tensor_2d_reshaped, label
+
+from sklearn.model_selection import StratifiedShuffleSplit
+import numpy as np
+from collections import Counter
+
+def stratified_split_indices_auto_rare(labels, test_size=0.2, rare_threshold=2, random_state=42):
+    """
+    Splits dataset indices into stratified train and test sets.
+    Automatically assigns rare class samples (occurrences < threshold) only to train.
+
+    Parameters:
+        labels (list or np.ndarray): Class labels.
+        test_size (float): Fraction of test samples (excluding rare classes).
+        rare_threshold (int): Max frequency for a class to be considered 'rare'.
+        random_state (int): Seed for reproducibility.
+
+    Returns:
+        train_idx (list): Indices for training set.
+        test_idx (list): Indices for test set.
+        rare_classes (list): List of rare class labels that were excluded from test set.
+    """
+    labels = np.array(labels)
+    label_counts = Counter(labels)
+
+    # Detect rare classes
+    rare_classes = [cls for cls, count in label_counts.items() if count < rare_threshold]
+    print('len(rare_classes)', len(rare_classes))
+ 
+    # Separate indices
+    rare_idx = np.where(np.isin(labels, rare_classes))[0]
+    other_idx = np.where(~np.isin(labels, rare_classes))[0]
+    other_labels = labels[other_idx]
+
+    # Stratified split on non-rare labels
+    splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+    train_other_idx, test_other_idx = next(splitter.split(np.zeros(len(other_labels)), other_labels))
+
+    # Map to original indices
+    train_idx = list(rare_idx) + list(other_idx[train_other_idx])
+    test_idx = list(other_idx[test_other_idx])
+
+    return train_idx, test_idx
+
 
 
 def get_data(configs):
@@ -63,7 +108,9 @@ def get_data(configs):
 	n_classes = configs['data']['num_clusters_data']
 
 	data_path = './data/'
-	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
+	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase.db")
+	print('DB_File Path',DB_FILE)
+
 
 	protein = True
 	if data_name == 'mnist' and protein == False:
@@ -85,6 +132,7 @@ def get_data(configs):
 		reset_random_seeds(configs['globals']['seed'])
 		db = Database(DB_FILE)
 
+
 		# load columns from the database as numpy arrays
 		_format = lambda x: (x['header'], x['sequence'], gzip_tensor(x['embedding']).numpy())
 		headers, sequences, embeddings = zip(*(_format(i) for i in db.retrieve()))
@@ -93,7 +141,15 @@ def get_data(configs):
 		accessions = np.array([i.split()[0] for i in headers], dtype=object)
 		sequences  = np.array(sequences , dtype=object)
 		embeddings = np.array(embeddings, dtype=object)
-
+		
+		df = pd.read_csv('phosphatase_labels.csv')
+		labels = set(df['label'])
+		label_to_int = {label: index for index, label in enumerate(sorted(list(labels)))}
+		acc_to_label = dict(zip(df['accession'], df['label']))
+		
+		# Map the accession array to integers using both dictionaries
+		int_labels = np.array([label_to_int[acc_to_label[acc]] for acc in accessions])
+  
 		max_length = max(embed.shape[0] for embed in embeddings)
 
 		padded_arrays = [np.pad(arr, ((0, max_length - arr.shape[0]), (0, 0)), mode='constant', constant_values=0)for arr in embeddings]
@@ -103,13 +159,15 @@ def get_data(configs):
 
 		embeddings = torch.from_numpy(padded_arrays).float()
 
+		# Perform PCA to reduce the dimensionality to 3
 		pca = PCA(n_components=3)
 		X_reduced=[]
 		for i in range(len(embeddings)):
 			X_reduced.append(pca.fit_transform(embeddings[i]))
-		
+
 		X_reduced = torch.Tensor(X_reduced)
-		
+
+
 		# Normalize the data to [0, 1]
 		data_min = X_reduced.min(dim=1,keepdim=True).values  # Minimum values per column
 		data_max = X_reduced.max(dim=1,keepdim=True).values  # Maximum values per column
@@ -119,22 +177,42 @@ def get_data(configs):
 
 		X_reduced = X_reduced.reshape(204,-1) #reshaping to 2D tensor just to simplify things and get the model working
 
-		#train test split
-		train_size = int(0.8*len(embeddings))
-		full_trainset_reduced = X_reduced[0:train_size]
-		full_testset_reduced = X_reduced[train_size:]
+		# #train test split
+		# train_size = int(0.8*len(embeddings))
+		# full_trainset_reduced = X_reduced[0:train_size]
+		# full_testset_reduced = X_reduced[train_size:]
 		
-		full_trainset = CustomDataset(full_trainset_reduced,10)
-		full_testset = CustomDataset(full_testset_reduced,10)
+		# full_trainset = CustomDataset(full_trainset_reduced,10,int_labels[0:train_size])
+		# full_testset = CustomDataset(full_testset_reduced,10,int_labels[train_size:])
 
 
-		n_classes = 10
+		# n_classes = 6
+		# indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
+		# print('indx train', indx_train)
+
+		indx_train, indx_test = stratified_split_indices_auto_rare(int_labels, test_size=0.3)
+
+		full_trainset = CustomDataset(X_reduced[indx_train],torch.from_numpy(int_labels[indx_train]).to(torch.int64))
+		full_testset = CustomDataset(X_reduced[indx_test],torch.from_numpy(int_labels[indx_test]).to(torch.int64))
+		print('len(full_testset)',len(full_testset))
+		print('int_labels[indx_train]',int_labels[indx_train])
+		print('int_labels[indx_test]',int_labels[indx_test])
+		
+		n_classes = 7
 		indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
 		print('indx train', indx_train)
+		print('len(indx_train)', len(indx_train))
+		
+		print('indx test', indx_test)
+		print('len(indx_test)', len(indx_test))
+  
 		trainset = Subset(full_trainset, indx_train)
 		trainset_eval = Subset(full_trainset, indx_train)
 		testset = Subset(full_testset, indx_test)
+		print('len(testset.indices),len(testset.dataset.targets)',len(testset.indices),len(testset.dataset.targets))
 
+		print('trainset.dataset.targets',trainset.dataset.targets)
+		print('type(trainset.dataset.targets)',type(trainset.dataset.targets))
 		print(f"Subset size: {len(trainset)}")
 		print(f"trainset[0]: {trainset[0]}")
 
@@ -429,7 +507,9 @@ def get_gen(dataset, configs, validation=False, shuffle=True, smalltree=False, s
 
 def select_subset(y_train, y_test, num_classes):
 	# Select a random subset of labels where the number of different labels equal num_classes.
-	digits = np.random.choice([i for i in range(len(np.unique(y_train)))], size=num_classes, replace=False)
+	print('unique classes:', np.unique(y_test))
+	# digits = np.random.choice([i for i in range(len(np.unique(y_train)))], size=num_classes, replace=False)
+	digits = np.random.choice([i for i in range(len(np.unique(y_test)))], size=num_classes, replace=False)
 	indx_train = np.array([], dtype=int)
 	indx_test = np.array([], dtype=int)
 	for i in range(num_classes):
