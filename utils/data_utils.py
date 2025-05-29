@@ -108,7 +108,7 @@ def get_data(configs):
 	n_classes = configs['data']['num_clusters_data']
 
 	data_path = './data/'
-	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase.db")
+	DB_FILE    = os.path.join(os.path.dirname(os.path.dirname(__file__)),"protein_dataset","phosphatase","phosphatase.db")
 	print('DB_File Path',DB_FILE)
 
 
@@ -125,8 +125,6 @@ def get_data(configs):
 		trainset = Subset(full_trainset, indx_train)
 		trainset_eval = Subset(full_trainset, indx_train)
 		testset = Subset(full_testset, indx_test)
-		print(f"Subset size: {len(trainset)}")
-		print(f"trainset[0]: {trainset[0]}")
 
 	elif data_name == 'mnist' and protein == True:
 		reset_random_seeds(configs['globals']['seed'])
@@ -194,28 +192,15 @@ def get_data(configs):
 
 		full_trainset = CustomDataset(X_reduced[indx_train],torch.from_numpy(int_labels[indx_train]).to(torch.int64))
 		full_testset = CustomDataset(X_reduced[indx_test],torch.from_numpy(int_labels[indx_test]).to(torch.int64))
-		print('len(full_testset)',len(full_testset))
-		print('int_labels[indx_train]',int_labels[indx_train])
-		print('int_labels[indx_test]',int_labels[indx_test])
+
 		
 		n_classes = 7
 		indx_train, indx_test = select_subset(full_trainset.targets, full_testset.targets, n_classes)
-		print('indx train', indx_train)
-		print('len(indx_train)', len(indx_train))
-		
-		print('indx test', indx_test)
-		print('len(indx_test)', len(indx_test))
+
   
 		trainset = Subset(full_trainset, indx_train)
 		trainset_eval = Subset(full_trainset, indx_train)
 		testset = Subset(full_testset, indx_test)
-		print('len(testset.indices),len(testset.dataset.targets)',len(testset.indices),len(testset.dataset.targets))
-
-		print('trainset.dataset.targets',trainset.dataset.targets)
-		print('type(trainset.dataset.targets)',type(trainset.dataset.targets))
-		print(f"Subset size: {len(trainset)}")
-		print(f"trainset[0]: {trainset[0]}")
-
 
 
 	elif data_name == 'fmnist':
